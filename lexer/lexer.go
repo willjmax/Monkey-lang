@@ -6,13 +6,23 @@ type Lexer struct {
     input           string
     position        int
     readPosition    int
+    escaped         bool
     ch              byte
+    errors          []string
 }
 
 func New(input string) *Lexer {
-    l := &Lexer{input: input}
+    l := &Lexer{input: input, escaped: false}
     l.readChar()
     return l
+}
+
+func (l *Lexer) Errors() []string {
+    return l.errors
+}
+
+func (l *Lexer) ClearErrors() {
+    l.errors = []string{}
 }
 
 func (l *Lexer) readChar() {
@@ -60,6 +70,10 @@ func (l *Lexer) NextToken() token.Token {
         tok = newToken(token.PLUS, l.ch)
     case '{':
         tok = newToken(token.LBRACE, l.ch)
+    case '[':
+        tok = newToken(token.LBRACKET, l.ch)
+    case ']':
+        tok = newToken(token.RBRACKET, l.ch)
     case '}':
         tok = newToken(token.RBRACE, l.ch)
     case '-':
@@ -81,6 +95,9 @@ func (l *Lexer) NextToken() token.Token {
         } else {
             tok = newToken(token.BANG, l.ch)
         }
+    case '"':
+        tok.Type = token.STRING
+        tok.Literal = l.readString()
     case 0:
         tok.Literal = ""
         tok.Type = token.EOF
@@ -120,6 +137,34 @@ func (l *Lexer) readNumber() string {
     position := l.position
     for isDigit(l.ch) {
         l.readChar()
+    }
+    return l.input[position:l.position]
+}
+
+func (l *Lexer) readString() string {
+    position := l.position + 1
+
+    for {
+        l.readChar()
+
+        if l.ch == '\\' {
+            l.escaped = true
+        }
+
+        if l.ch == '"' && l.escaped == true {
+            l.escaped = false
+            continue
+        }
+
+        if l.ch == '"' && l.escaped == false {
+            break
+        }
+
+        if l.ch == 0 {
+            msg := "ERROR: EOF encountered before string literal closed"
+            l.errors = append(l.errors, msg)
+            break
+        }
     }
     return l.input[position:l.position]
 }

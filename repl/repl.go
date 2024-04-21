@@ -37,12 +37,18 @@ func Start(in io.Reader, out io.Writer) {
         }
 
         line := scanner.Text()
+
         l := lexer.New(line)
+        if len(l.Errors()) != 0 {
+            printErrors(out, l.Errors())
+            continue
+        }
+
         p := parser.New(l)
 
         program := p.ParseProgram()
         if len(p.Errors()) != 0 {
-            printParserErrors(out, p.Errors())
+            printErrors(out, p.Errors())
             continue
         }
 
@@ -55,10 +61,10 @@ func Start(in io.Reader, out io.Writer) {
     }
 }
 
-func printParserErrors(out io.Writer, errors []string) {
+func printErrors(out io.Writer, errors []string) {
     io.WriteString(out, MONKEY_FACE)
     io.WriteString(out, "Woops! We ran into some monkey business here!\n")
-    io.WriteString(out, "parser errors:\n")
+    io.WriteString(out, "errors:\n")
     for _, msg := range errors {
         io.WriteString(out, "\t"+msg+"\n")
     }
