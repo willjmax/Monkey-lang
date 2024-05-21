@@ -363,3 +363,40 @@ func (ml *MacroLiteral) String() string {
 
     return out.String()
 }
+
+type WhileExpression struct {
+    Token     token.Token
+    Condition Expression
+    Loop      *BlockStatement
+}
+
+func (we *WhileExpression) expressionNode() {}
+func (we *WhileExpression) TokenLiteral() string { return we.Token.Literal }
+func (we *WhileExpression) String() string {
+    var out bytes.Buffer
+
+    out.WriteString("while")
+    out.WriteString(we.Condition.String())
+    out.WriteString(" ")
+    out.WriteString(we.Loop.String())
+
+    return out.String()
+}
+
+type AssignStatement struct {
+    Token      token.Token
+    Variable   *Identifier
+    Value      Expression
+}
+
+func (ae *AssignStatement) statementNode() {}
+func (ae *AssignStatement) TokenLiteral() string { return ae.Token.Literal }
+func (ae *AssignStatement) String() string {
+    var out bytes.Buffer
+    
+    out.WriteString(ae.Variable.String())
+    out.WriteString(" = ")
+    out.WriteString(ae.Value.String())
+
+    return out.String()
+}

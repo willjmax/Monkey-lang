@@ -72,6 +72,7 @@ func New(l *lexer.Lexer) *Parser {
     p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
     p.registerPrefix(token.LBRACE, p.parseHashLiteral)
     p.registerPrefix(token.MACRO, p.parseMacroLiteral)
+    p.registerPrefix(token.WHILE, p.parseWhileExpression)
 
     p.infixParseFns = make(map[token.TokenType]infixParseFn)
     p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -134,6 +135,12 @@ func (p *Parser) parseStatement() ast.Statement {
         return p.parseLetStatement()
     case token.RETURN:
         return p.parseReturnStatement()
+    case token.IDENT:
+        if p.peekTokenIs(token.ASSIGN) {
+            return p.parseAssignStatement()
+        } else {
+            return p.parseExpressionStatement()
+        }
     default:
         return p.parseExpressionStatement()
     }
@@ -162,6 +169,25 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 
     if p.peekTokenIs(token.SEMICOLON) {
         p.nextToken()
+    }
+
+    return stmt
+}
+
+func (p *Parser) parseAssignStatement() *ast.AssignStatement {
+    stmt := &ast.AssignStatement{}
+    stmt.Variable = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+    if !p.expectPeek(token.ASSIGN) {
+        return nil
+    }
+
+    stmt.Token = p.curToken
+    p.nextToken()
+    stmt.Value = p.parseExpression(LOWEST)
+
+    if fl, ok := stmt.Value.(*ast.FunctionLiteral); ok {
+        fl.Name = stmt.Variable.Value
     }
 
     return stmt
@@ -337,6 +363,29 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
     precedence := p.curPrecedence()
     p.nextToken()
     expression.Right = p.parseExpression(precedence)
+
+    return expression
+}
+
+func (p *Parser) parseWhileExpression() ast.Expression {
+    expression := &ast.WhileExpression{Token: p.curToken}
+
+    if !p.expectPeek(token.LPAREN) {
+        return nil
+    }
+
+    p.nextToken()
+    expression.Condition = p.parseExpression(LOWEST)
+
+    if !p.expectPeek(token.RPAREN) {
+        return nil
+    }
+
+    if !p.expectPeek(token.LBRACE) {
+        return nil
+    }
+
+    expression.Loop = p.parseBlockStatement()
 
     return expression
 }

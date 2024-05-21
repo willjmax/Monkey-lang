@@ -30,6 +30,14 @@ func TestNextToken (t *testing.T) {
     [1, 2];
     {"foo": "bar"}
     macro(x, y) { x + y; };
+
+    while (true) {
+        put("hello world");
+    }
+
+    while (x < 10) {
+        x = x + 1;
+    }
     `
 
     tests := []struct {
@@ -151,6 +159,33 @@ func TestNextToken (t *testing.T) {
         {token.SEMICOLON, ";"},
         {token.RBRACE, "}"},
         {token.SEMICOLON, ";"},
+
+        {token.WHILE, "while"},
+        {token.LPAREN, "("},
+        {token.TRUE, "true"},
+        {token.RPAREN, ")"},
+        {token.LBRACE, "{"},
+        {token.IDENT, "put"},
+        {token.LPAREN, "("},
+        {token.STRING, "hello world"},
+        {token.RPAREN, ")"},
+        {token.SEMICOLON, ";"},
+        {token.RBRACE, "}"},
+
+        {token.WHILE, "while"},
+        {token.LPAREN, "("},
+        {token.IDENT, "x"},
+        {token.LT, "<"},
+        {token.INT, "10"},
+        {token.RPAREN, ")"},
+        {token.LBRACE, "{"},
+        {token.IDENT, "x"},
+        {token.ASSIGN, "="},
+        {token.IDENT, "x"},
+        {token.PLUS, "+"},
+        {token.INT, "1"},
+        {token.SEMICOLON, ";"},
+        {token.RBRACE, "}"},
 
         {token.EOF, ""},
     }

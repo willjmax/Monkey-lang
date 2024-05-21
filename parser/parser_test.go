@@ -427,6 +427,95 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
   }
 }
 
+func TestAssignStatement(t *testing.T) {
+    input := `x = x + 1`
+
+    l := lexer.New(input)
+    p := New(l)
+    program := p.ParseProgram()
+    checkParserErrors(t, p)
+
+
+    if len(program.Statements) != 1 {
+        t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+            1, len(program.Statements))
+    }
+
+	stmt := program.Statements[0]
+
+	if stmt.TokenLiteral() != "=" {
+		t.Fatalf("stmt.TokenLiteral not '='. got=%q", stmt.TokenLiteral())
+	}
+
+	assignStmt, ok := stmt.(*ast.AssignStatement)
+	if !ok {
+		t.Fatalf("stmt not *ast.AssignStatement. got=%T", stmt)
+	}
+
+	if assignStmt.Variable.Value != "x" {
+		t.Fatalf("assignStmt.Variable.Value not '%s'. got=%s", "x", assignStmt.Variable.Value)
+	}
+
+	if assignStmt.Variable.TokenLiteral() != "x" {
+		t.Fatalf("assignStmt.Name.TokenLiteral() not '%s'. got=%s",
+			"x", assignStmt.Variable.TokenLiteral())
+	}
+
+    if !testInfixExpression(t, assignStmt.Value, "x", "+", 1) {
+        t.Fatalf("assignStmt.Value not infix expression")
+    }
+}
+
+func TestWhileExpression(t *testing.T) {
+    input := `
+    let x = 0;
+    while ( x < 10 ) {
+        x = x + 1
+    }
+    `
+
+    l := lexer.New(input)
+    p := New(l)
+    program := p.ParseProgram()
+    checkParserErrors(t, p)
+
+    if len(program.Statements) != 2 {
+        t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+            2, len(program.Statements))
+    }
+
+    stmt, ok := program.Statements[1].(*ast.ExpressionStatement)
+    if !ok {
+        t.Fatalf("program.Statements[1] is not ast.ExpressionStatement. got=%T",
+            program.Statements[1])
+    }
+
+    exp, ok := stmt.Expression.(*ast.WhileExpression)
+    if !ok {
+        t.Fatalf("stmt.Expression is not ast.WhileExpression. got=%T",
+            stmt.Expression)
+    }
+
+    if len(exp.Loop.Statements) != 1 {
+        t.Errorf("Loop is not 1 statements. got=%d\n",
+            len(exp.Loop.Statements))
+    }
+
+    assignStmt, ok := exp.Loop.Statements[0].(*ast.AssignStatement)
+    if !ok {
+        t.Fatalf("Statements[0] is not ast.AssignStatement. got=%T",
+            exp.Loop.Statements[0])
+    }
+
+	if assignStmt.Variable.Value != "x" {
+		t.Fatalf("assignStmt.Variable.Value not '%s'. got=%s", "x", assignStmt.Variable.Value)
+	}
+
+    if !testInfixExpression(t, assignStmt.Value, "x", "+", 1) {
+        t.Fatalf("assignStmt.Value not infix expression")
+    }
+}
+
 func TestIfExpression(t *testing.T) {
     input := `if (x < y) { x }`
 
