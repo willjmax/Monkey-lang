@@ -45,6 +45,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
             env.Set(node.Name.Value, val)
         }
 
+    case *ast.AssignStatement:
+        val := Eval(node.Value, env)
+        if isError(val) {
+            return val
+        }
+
+        if _, ok := builtins[node.Variable.Value]; ok {
+            return newError("Cannot redefine builtin function `%s`", node.Variable.Value)
+        } else {
+            env.Set(node.Variable.Value, val)
+        }
+
     // Expressions
     case *ast.Boolean:
         return nativeBoolToBooleanObject(node.Value)
@@ -72,6 +84,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 
     case *ast.IfExpression:
         return evalIfExpression(node, env)
+
+    case *ast.WhileExpression:
+        return evalWhileExpression(node, env)
 
     case *ast.IndexExpression:
         left := Eval(node.Left, env)
@@ -268,6 +283,22 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
     } else {
         return NULL
     }
+}
+
+func evalWhileExpression(we *ast.WhileExpression, env *object.Environment) object.Object {
+    condition := Eval(we.Condition, env)
+
+    if !isTruthy(condition) {
+        return NULL
+    }
+
+    var result object.Object
+    for isTruthy(condition) {
+        result = Eval(we.Loop, env)
+        condition = Eval(we.Condition, env)
+    }
+
+    return result
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
