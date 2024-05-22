@@ -190,6 +190,10 @@ func (p *Parser) parseAssignStatement() *ast.AssignStatement {
         fl.Name = stmt.Variable.Value
     }
 
+    if p.peekTokenIs(token.SEMICOLON) {
+        p.nextToken()
+    }
+
     return stmt
 }
 

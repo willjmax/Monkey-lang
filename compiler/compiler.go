@@ -67,6 +67,7 @@ func (c *Compiler) Compile(node ast.Node) error {
     switch node := node.(type) {
     case *ast.Program:
         for _, s := range node.Statements {
+            fmt.Printf("%T", s)
             err := c.Compile(s)
             if err != nil {
                 return err
@@ -90,6 +91,23 @@ func (c *Compiler) Compile(node ast.Node) error {
 
         case *ast.LetStatement:
             symbol := c.symbolTable.Define(node.Name.Value)
+            err := c.Compile(node.Value)
+            if err != nil {
+                return err
+            }
+
+            if symbol.Scope == GlobalScope {
+                c.emit(code.OpSetGlobal, symbol.Index)
+            } else {
+                c.emit(code.OpSetLocal, symbol.Index)
+            }
+
+        case *ast.AssignStatement:
+            symbol, ok := c.symbolTable.Resolve(node.Variable.Value)
+            if !ok {
+                return fmt.Errorf("Attempted to assign undefined variable %s", node.Variable.Value)
+            }
+
             err := c.Compile(node.Value)
             if err != nil {
                 return err

@@ -428,7 +428,11 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 }
 
 func TestAssignStatement(t *testing.T) {
-    input := `x = x + 1`
+    input := `
+    let x = 0;
+    x = x + 1;
+    x;
+    `
 
     l := lexer.New(input)
     p := New(l)
@@ -436,12 +440,12 @@ func TestAssignStatement(t *testing.T) {
     checkParserErrors(t, p)
 
 
-    if len(program.Statements) != 1 {
+    if len(program.Statements) != 3 {
         t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
-            1, len(program.Statements))
+            3, len(program.Statements))
     }
 
-	stmt := program.Statements[0]
+	stmt := program.Statements[1]
 
 	if stmt.TokenLiteral() != "=" {
 		t.Fatalf("stmt.TokenLiteral not '='. got=%q", stmt.TokenLiteral())

@@ -7,13 +7,13 @@ import (
 	"monkey/object"
 )
 
-const StackSize = 2048
+const StackSize   = 2048
 const GlobalsSize = 65536
-const MaxFrames = 1024
+const MaxFrames   = 1024
 
-var True = &object.Boolean{Value: true}
+var True  = &object.Boolean{Value: true}
 var False = &object.Boolean{Value: false}
-var Null = &object.Null{}
+var Null  = &object.Null{}
 
 func nativeBoolToBooleanObject(input bool) *object.Boolean {
     if input{
@@ -23,13 +23,10 @@ func nativeBoolToBooleanObject(input bool) *object.Boolean {
 }
 
 type VM struct {
-    constants    []object.Object
-
-    stack []object.Object
-    sp    int
-
-    globals []object.Object
-
+    constants   []object.Object
+    stack       []object.Object
+    sp          int
+    globals     []object.Object
     frames      []*Frame
     framesIndex int
 }

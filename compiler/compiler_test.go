@@ -28,7 +28,6 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 
     for _, tt := range tests {
         program := parse(tt.input)
-
         compiler := New()
         err := compiler.Compile(program)
         if err != nil {
@@ -377,6 +376,31 @@ func TestGlobalLetStatements(t *testing.T) {
                 code.Make(code.OpGetGlobal, 0),
                 code.Make(code.OpSetGlobal, 1),
                 code.Make(code.OpGetGlobal, 1),
+                code.Make(code.OpPop),
+            },
+        },
+    }
+
+    runCompilerTests(t, tests)
+}
+
+func TestAssignStatement(t *testing.T) {
+    tests := []compilerTestCase{
+        {
+            input: `
+            let x = 0;
+            x = x + 1;
+            x;
+            `,
+            expectedConstants: []interface{}{0, 1},
+            expectedInstructions: []code.Instructions{
+                code.Make(code.OpConstant, 0),
+                code.Make(code.OpSetGlobal, 0),
+                code.Make(code.OpGetGlobal, 0),
+                code.Make(code.OpConstant, 1),
+                code.Make(code.OpAdd),
+                code.Make(code.OpSetGlobal, 0),
+                code.Make(code.OpGetGlobal, 0),
                 code.Make(code.OpPop),
             },
         },

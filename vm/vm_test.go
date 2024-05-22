@@ -775,3 +775,29 @@ func TestRecursiveFibonacci(t *testing.T) {
 
     runVmTests(t, tests)
 }
+
+func TestAssignStatement(t *testing.T) {
+    tests := []vmTestCase{
+        {
+            input: `
+            let x = 0;
+            x = x + 1;
+            1;
+            `,
+            expected: 1,
+        },
+        {
+            input: `
+            let x = 0;
+            let y = fn() {
+                x = x + 1;
+            };
+            y();
+            x;
+            `,
+            expected: 1,
+        },
+    }
+
+    runVmTests(t, tests)
+}
