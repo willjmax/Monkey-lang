@@ -475,6 +475,7 @@ func TestWhileExpression(t *testing.T) {
     let x = 0;
     while ( x < 10 ) {
         x = x + 1
+        x-1;
     }
     `
 
@@ -500,8 +501,8 @@ func TestWhileExpression(t *testing.T) {
             stmt.Expression)
     }
 
-    if len(exp.Loop.Statements) != 1 {
-        t.Errorf("Loop is not 1 statements. got=%d\n",
+    if len(exp.Loop.Statements) != 2 {
+        t.Errorf("Loop is not 2 statements. got=%d\n",
             len(exp.Loop.Statements))
     }
 
