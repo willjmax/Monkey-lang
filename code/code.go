@@ -22,6 +22,7 @@ const (
     OpGreaterThan
     OpMinus
     OpBang
+    OpJumpTruthy
     OpJumpNotTruthy
     OpJump
     OpNull
@@ -39,6 +40,7 @@ const (
     OpClosure
     OpGetFree
     OpCurrentClosure
+    OpNoOp
 )
 
 type Definition struct {
@@ -60,6 +62,7 @@ var definitions = map[Opcode]*Definition{
     OpGreaterThan:    {"OpGreaterThan", []int{}},
     OpMinus:          {"OpMinus", []int{}},
     OpBang:           {"OpBang", []int{}},
+    OpJumpTruthy:     {"OpJumpTruthy", []int{2}},
     OpJumpNotTruthy:  {"OpJumpNotTruthy", []int{2}},
     OpJump:           {"OpJump", []int{2}},
     OpNull:           {"OpNull", []int{}},
@@ -77,6 +80,7 @@ var definitions = map[Opcode]*Definition{
     OpClosure:        {"OpClosure", []int{2, 1}},
     OpGetFree:        {"OpGetFree", []int{1}},
     OpCurrentClosure: {"OpCurrentClosure", []int{}},
+    OpNoOp:           {"OpNoOp", []int{}},
 }
 
 type Instructions []byte

@@ -10,12 +10,10 @@ import (
 
 
 type Compiler struct {
-    constants    []object.Object
-
+    constants   []object.Object
     symbolTable *SymbolTable
-
-    scopes     []CompilationScope
-    scopeIndex int
+    scopes      []CompilationScope
+    scopeIndex  int
 }
 
 type Bytecode struct {
@@ -36,8 +34,8 @@ type CompilationScope struct {
 
 func New() *Compiler {
     mainScope := CompilationScope{
-        instructions: code.Instructions{},
-        lastInstruction: EmittedInstruction{},
+        instructions:        code.Instructions{},
+        lastInstruction:     EmittedInstruction{},
         previousInstruction: EmittedInstruction{},
     }
 
@@ -67,7 +65,6 @@ func (c *Compiler) Compile(node ast.Node) error {
     switch node := node.(type) {
     case *ast.Program:
         for _, s := range node.Statements {
-            fmt.Printf("%T", s)
             err := c.Compile(s)
             if err != nil {
                 return err
@@ -194,6 +191,67 @@ func (c *Compiler) Compile(node ast.Node) error {
             default:
                 return fmt.Errorf("unknown operator %s", node.Operator)
             }
+
+        case *ast.WhileExpression:
+            err := c.Compile(node.Condition)
+            if err != nil {
+                return err
+            }
+
+            notTruthyPos := c.emit(code.OpJumpNotTruthy, 9999)
+            afterNotTruthy := notTruthyPos + 3
+
+            numStmts := len(node.Loop.Statements)
+            var emptyLoop bool
+            if numStmts == 0 {
+                emptyLoop = true
+                c.emit(code.OpNoOp)
+            }
+
+            var loopReturnsNull bool
+            var beginFinalStmt int
+            var endFinalStmt int
+            for i, stmt := range node.Loop.Statements {
+                if i == numStmts-1 {
+                    beginFinalStmt = len(c.currentInstructions())
+                }
+
+                err = c.Compile(stmt)
+                if err != nil {
+                    return err
+                }
+
+                if i == numStmts-1 {
+                    endFinalStmt = len(c.currentInstructions())
+
+                    if c.lastInstructionIs(code.OpPop) {
+                        loopReturnsNull = false
+                    } else {
+                        loopReturnsNull = true
+                    }
+                }
+            }
+
+            err = c.Compile(node.Condition)
+            if err != nil {
+                return err
+            }
+
+            c.emit(code.OpJumpTruthy, afterNotTruthy)
+
+            if !emptyLoop {
+                if loopReturnsNull {
+                    c.emit(code.OpNull)
+                } else {
+                    c.repeatInstructions(beginFinalStmt, endFinalStmt)
+                    c.removeLastPop()
+                }
+            }
+
+            jumpOverNull := c.emit(code.OpJump, 9999)
+            endLoop := c.emit(code.OpNull)
+            c.changeOperand(notTruthyPos, endLoop)
+            c.changeOperand(jumpOverNull, endLoop+1)
 
         case *ast.IfExpression:
             err := c.Compile(node.Condition)
@@ -366,6 +424,21 @@ func (c *Compiler) addInstruction(ins []byte) int {
     c.scopes[c.scopeIndex].instructions = updatedInstructions
 
     return posNewInstruction
+}
+
+func (c *Compiler) repeatInstructions(start int, end int) int {
+    i := start
+
+    var pos int
+    for i < end {
+        opcode := c.currentInstructions()[i]
+        definition, _ := code.Lookup(opcode) 
+        operands, offset := code.ReadOperands(definition, c.currentInstructions()[i+1:])
+        pos = c.emit(code.Opcode(opcode), operands...)
+        i += 1 + offset
+    }
+
+    return pos
 }
 
 func (c *Compiler) emit(op code.Opcode, operands ...int) int {

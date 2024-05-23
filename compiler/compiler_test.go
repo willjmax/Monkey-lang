@@ -1099,3 +1099,103 @@ func TestRecursiveFunctions(t *testing.T) {
 
     runCompilerTests(t, tests)
 }
+
+func TestWhileExpression(t *testing.T) {
+    tests := []compilerTestCase{
+        {
+            input: `
+            while (false) { }
+            `,
+            expectedConstants: []interface{}{},
+            expectedInstructions: []code.Instructions{
+                // 0000
+                code.Make(code.OpFalse),
+                // 0001
+                code.Make(code.OpJumpNotTruthy, 12),
+                // 0004
+                code.Make(code.OpNoOp),
+                // 0005
+                code.Make(code.OpFalse),
+                // 0006
+                code.Make(code.OpJumpTruthy, 4),
+                // 0009
+                code.Make(code.OpJump, 13),
+                // 0012
+                code.Make(code.OpNull),
+                // 0013
+                code.Make(code.OpPop),
+            },
+        },
+        {
+            input: `
+            let x = 0;
+            while (x < 10) {
+                x = x + 1;
+                x-1;
+            };
+            `,
+            expectedConstants: []interface{}{0, 10, 1, 1, 10},
+            expectedInstructions: []code.Instructions{
+                // LET STATEMENT
+                // 0000
+                code.Make(code.OpConstant, 0),
+                // 0003
+                code.Make(code.OpSetGlobal, 0),
+
+                // CONDITIONAL
+                // 0006
+                code.Make(code.OpConstant, 1),
+                // 0009
+                code.Make(code.OpGetGlobal, 0),
+                // 0012
+                code.Make(code.OpGreaterThan),
+                // 0013
+                code.Make(code.OpJumpNotTruthy, 54),
+
+                // LOOP BODY
+                // 0016
+                code.Make(code.OpGetGlobal, 0),
+                // 0019
+                code.Make(code.OpConstant, 2),
+                // 0022
+                code.Make(code.OpAdd),
+                // 0023
+                code.Make(code.OpSetGlobal, 0),
+                // 0026
+                code.Make(code.OpGetGlobal, 0),
+                // 0029
+                code.Make(code.OpConstant, 3),
+                // 0032
+                code.Make(code.OpSub),
+                // 0033
+                code.Make(code.OpPop),
+
+                // CONDITIONAL
+                // 0034
+                code.Make(code.OpConstant, 4),
+                // 0037
+                code.Make(code.OpGetGlobal, 0),
+                // 0040
+                code.Make(code.OpGreaterThan),
+                // 0041
+                code.Make(code.OpJumpTruthy, 16),
+
+                // RETURN VALUE
+                // 0044
+                code.Make(code.OpGetGlobal, 0),
+                // 0047
+                code.Make(code.OpConstant, 3),
+                // 0050
+                code.Make(code.OpSub),
+                // 0051
+                code.Make(code.OpJump, 55),
+                // 0054
+                code.Make(code.OpNull),
+                // 0055
+                code.Make(code.OpPop),
+            },
+        },
+    }
+
+    runCompilerTests(t, tests)
+}

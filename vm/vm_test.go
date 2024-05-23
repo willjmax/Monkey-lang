@@ -801,3 +801,44 @@ func TestAssignStatement(t *testing.T) {
 
     runVmTests(t, tests)
 }
+
+func TestWhileExpression(t *testing.T) {
+    tests := []vmTestCase{
+        {
+            input: `while (false) { };`,
+            expected: nil,
+        },
+        {
+            input: `
+            let x = 0;
+            while (x < 10) {
+                x = x + 1;
+                x-1;
+            };
+            `,
+            expected: 9,
+        },
+        {
+            input: `
+            let x = 0;
+            let y = while (x < 10) { x = x+1; x; };
+            y;
+            `,
+            expected: 10,
+        },
+        {
+            input: `
+            let x = 0;
+            while ( x < 100) {
+                let y = 0;
+                x = x + while ( y < 10 ) { y = y + 1; y; };
+            };
+            x;
+            `,
+            expected: 100,
+        },
+
+    }
+
+    runVmTests(t, tests)
+}
